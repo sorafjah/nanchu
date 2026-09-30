@@ -33,14 +33,9 @@
 body.space{--ink:#d9e1ee;--panel:rgba(22,30,50,0.62);--line:rgba(160,180,215,0.35);--btn:rgba(255,255,255,0.06);--navy:#3d5a8c;--sun:#b9801c;--track:#3a4a68}
 body.space .tabs,body.space #infoBtn,body.space #helpBtn,body.space .dock,body.space #info{box-shadow:none;border:1px solid rgba(160,180,215,0.18)}
 body.space .seasonBtn{border-width:2px;opacity:.85}
-body.space .seasonBtn small{display:none}
 body.space #infoBtn[aria-pressed="true"]{border:3px solid var(--sel)}
 body.space #help .card{--ink:#1d2a3a;--btn:#fff}
 body.space .seasonBtn[aria-pressed="true"]{opacity:1}
-body.space #info{width:auto;padding:8px 12px}
-body.space #info .season{font-size:15px}
-body.space #info .big .val{font-size:24px}
-body.space #info .big .lbl{font-size:12px}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1b3a;color:var(--ink);font-family:var(--font);
   touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
 #stage{position:fixed;inset:0}
@@ -60,14 +55,14 @@ ruby rt{font-size:0.5em;font-weight:400;letter-spacing:0}
 #helpBtn{margin-left:auto;width:52px;height:52px;border-radius:50%;border:0;background:var(--panel);font-size:26px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 
 /* 情報カード（くわしく で表示） */
-#info{position:fixed;left:14px;top:calc(76px + env(safe-area-inset-top,0px));width:min(280px,calc(100vw - 28px));background:var(--panel);border-radius:16px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,.2);line-height:1.5}
-#info .season{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:700}
+#info{position:fixed;left:14px;top:calc(76px + env(safe-area-inset-top,0px));max-width:calc(100vw - 28px);background:var(--panel);border-radius:16px;padding:8px 12px;box-shadow:0 2px 12px rgba(0,0,0,.2);line-height:1.5}
+#info .season{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
 #info .chip{width:16px;height:16px;border-radius:4px;flex:none}
 #info .big{display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap}
-#info .big .lbl{font-size:14px;font-weight:700}
-#info .big .val{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+#info .big .lbl{font-size:12px;font-weight:700}
+#info .big .val{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 #info .big .hint{font-size:13px;color:#56657a}
-#info dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0 0;font-size:15px}
+#info dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:2px 0 0;font-size:12px}
 #info dt{font-weight:700}
 #info dd{margin:0;font-variant-numeric:tabular-nums}
 
@@ -76,7 +71,7 @@ ruby rt{font-size:0.5em;font-weight:400;letter-spacing:0}
 .dock{pointer-events:auto;background:var(--panel);border-radius:18px;padding:8px 10px;box-shadow:0 2px 14px rgba(0,0,0,.22);width:min(1140px,100%)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .seasonBtn{min-width:56px;min-height:56px;border-radius:12px;border:3px solid var(--c);background:var(--btn);font-size:21px;padding:0 8px;line-height:1}
-.seasonBtn small{display:block;font-size:11px;font-weight:400;margin-top:3px}
+.seasonBtn small{display:none}
 .seasonBtn[aria-pressed="true"]{background:var(--c);color:#fff}
 .tog{min-height:52px;min-width:44px;border-radius:12px;border:2px solid var(--line);background:var(--btn);font-size:15px;padding:0 12px}
 .tog[aria-pressed="true"]{border:3px solid var(--sel)}
@@ -114,7 +109,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
 </script>
 </head>
 <body>
-<!-- build: 2026-09-30d -->
+<!-- build: 2026-09-30e -->
 <div id="stage"></div>
 
 <div id="top">
@@ -137,6 +132,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       <button class="seasonBtn" data-season="winter" style="--c:var(--winter)" data-ruby>{冬|ふゆ}<small>12{月|がつ}</small></button>
       <button class="tog" id="noonBtn" aria-pressed="false" data-ruby>{南中高度|なんちゅうこうど}</button>
       <button class="tog groundOnly" id="compareBtn" aria-pressed="false">くらべる</button>
+      <button class="tog groundOnly" id="shadowBtn" aria-pressed="false">かげ</button>
       <button class="tog groundOnly" id="viewBtn" aria-pressed="false" data-ruby>{人|ひと}の{目|め}で{見|み}る</button>
       <div class="timeBox groundOnly">
         <button id="playBtn" aria-label="時間を動かす">▶</button>
@@ -196,7 +192,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       </li>
     </ol>
     <button class="go" id="startBtn">はじめる</button>
-    <p class="ver">バージョン v2026-09-30d</p>
+    <p class="ver">バージョン v2026-09-30e</p>
   </div>
 </div>
 
@@ -215,11 +211,13 @@ const CFG = {
   timeMin: 4, timeMax: 20,
   playSpeed: 1.4,        // ▶ のとき 1秒で進む時間（時間）
   fanR: 3.4,             // 南中高度の扇形の半径
+  shadowOpacity: 0.32,   // かげの濃さ
   groundGlow: 2.0,       // 空で見る：太陽のまわりの光の大きさ
-  spaceGlow: 8.5,        // 宇宙から見る：太陽のまわりの光の大きさ
+  spaceGlow: 4.6,        // 宇宙から見る：太陽のまわりの光の大きさ
   // 宇宙から見るモード（大きさはわかりやすさ優先のチート）
-  orbitR: 13, earthR: 2.4, sunR: 2.4,
+  orbitR: 13, earthR: 2.4, sunR: 1.3,   // 太陽は便宜上小さくしている
   orbitSpeed: 36,        // ▶1年 のとき 1秒で進む角度（度）
+  seasonHold: 1.6,       // ▶1年 のとき、春分・夏至・秋分・冬至で止まる時間（秒）
   seasonMoveSpeed: 200,  // 季節ボタンで地球が進む速さ（度/秒）。公転の向きにだけ進む
   camTweenTime: 0.8,     // カメラ移動の時間（秒）
   japanLon: 138,         // 地球の画像で「日本」を太陽に向けるための経度（東経）
@@ -284,9 +282,11 @@ const S = {
   eyeView: false,          // 人の目で見る
   showInfo: false,         // くわしく（左上のカード）
   showNoon: false,         // 南中高度の表示
+  showShadow: false,       // 人のかげの表示
   orbitAngle: 180,         // 宇宙モード：地球の公転角（度）
   orbitTarget: null,       // 季節ボタンで向かう角度（公転の向きにだけ進む）
   spacePlaying: false,
+  hold: 0,                 // ▶1年 で季節の点に止まっている残り時間
   closeUp: false,
   helpOpen: true,
   started: false,
@@ -484,8 +484,13 @@ function buildGround() {
     G.paths[key] = { tube, mat, lab };
   }
 
-  // 人
+  // 人と かげ（「かげ」ボタンで表示）
   G.person = makePerson(); scene.add(G.person);
+  const sg = new THREE.PlaneGeometry(1, 0.5); sg.rotateX(-Math.PI / 2); sg.translate(0.5, 0.03, 0);
+  G.shadow = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: CFG.shadowOpacity, depthWrite: false }));
+  scene.add(G.shadow);
+  G.shadowHead = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: CFG.shadowOpacity, depthWrite: false }));
+  G.shadowHead.rotation.x = -Math.PI / 2; scene.add(G.shadowHead);
 
   // 太陽
   G.sun = new THREE.Group();
@@ -521,7 +526,7 @@ function rebuildFan() {
   applyGroundVisibility();
 }
 function applyGroundVisibility() {
-  G.fan.visible = S.showNoon && !S.eyeView;
+  G.fan.visible = S.showNoon;
   if (G.northLab) G.northLab.visible = !S.eyeView;   // 人の目で見るときは目の前に来るので消す
 }
 
@@ -542,6 +547,15 @@ function updateGround(dt) {
   G.dir.position.copy(v).multiplyScalar(20);
   G.dir.intensity = alt > 0 ? 0.4 + 1.2 * Math.min(1, alt / 20) : 0;
   G.hemi.intensity = alt > 0 ? 1.2 : 0.55 + 0.65 * Math.max(0, (alt + 8) / 8);
+  // かげ（見た目だけの計算で作る）
+  const up = S.showShadow && alt > 0.3;
+  G.shadow.visible = G.shadowHead.visible = up;
+  if (up) {
+    const L = Math.min(CFG.groundR - 0.3, CFG.personH / Math.tan(alt * D2R));
+    const dx = -v.x, dz = -v.z, hl = Math.hypot(dx, dz) || 1;
+    G.shadow.scale.x = Math.max(0.01, L * 0.86); G.shadow.rotation.y = Math.atan2(-dz / hl, dx / hl);
+    G.shadowHead.position.set(dx / hl * L * 0.93, 0.035, dz / hl * L * 0.93);
+  }
   S.cur = { alt };
 }
 
@@ -589,12 +603,12 @@ function buildSpace() {
   scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.9 })));
 
   // 太陽
-  P.sunMat = new THREE.MeshBasicMaterial({ color: 0xffd23f });
+  P.sunMat = new THREE.MeshBasicMaterial({ color: 0xd9a93a });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(CFG.sunR, 48, 32), P.sunMat));
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.5; scene.add(glow);
+  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.35; scene.add(glow);
   const sl = makeLabel('太陽', { furi: 'たいよう', fs: 60, color: '#fff', stroke: '#000', h: 1.4 });
-  sl.position.set(0, CFG.sunR + 1.6, 0); scene.add(sl);
+  sl.position.set(0, CFG.sunR + 1.3, 0); scene.add(sl);
   scene.add(new THREE.PointLight(0xffffff, 3.2, 0, 0));
   scene.add(new THREE.AmbientLight(0xffffff, 0.12));
 
@@ -685,9 +699,15 @@ function nearestSeason(deg) {
 
 function updateSpace(dt) {
   if (S.spacePlaying) {
-    S.orbitAngle = (S.orbitAngle + CFG.orbitSpeed * dt) % 360;
-    const ns = nearestSeason(S.orbitAngle);
-    if (ns !== S.season) { S.season = ns; syncSeasonUI(); }
+    // 次の季節の点まで進んで、そこで少し止まる。季節ボタンと南中高度は、その点に着いたときに切りかわる
+    if (S.hold > 0) S.hold -= dt;
+    else {
+      const step = CFG.orbitSpeed * dt;
+      let best = null, bestAhead = 999;
+      for (const k of ORDER) { const a = ((SEASONS[k].orbit - S.orbitAngle) % 360 + 360) % 360; if (a > 0.001 && a < bestAhead) { bestAhead = a; best = k; } }
+      if (bestAhead <= step) { S.orbitAngle = SEASONS[best].orbit; S.season = best; S.hold = CFG.seasonHold; syncSeasonUI(); syncModeUI(); }
+      else S.orbitAngle = (S.orbitAngle + step) % 360;
+    }
   } else if (S.orbitTarget !== null) {
     // 公転の向き（反時計回り）にだけ進む
     const ahead = ((S.orbitTarget - S.orbitAngle) % 360 + 360) % 360;
@@ -770,7 +790,7 @@ function renderInfo() {
       <dl><dt>${R('{昼|ひる}の{長|なが}さ')}</dt><dd>${fmtHours(di.hours)}</dd></dl>`;
   } else {
     const cur = S.cur || { alt: noonAlt(s.dec) };
-    const moving = S.spacePlaying || S.orbitTarget !== null;
+    const moving = (S.spacePlaying && !(S.hold > 0)) || S.orbitTarget !== null;
     key = `s|${moving}|${S.season}|${Math.round(cur.alt)}`;
     html = `<div class="season"><span class="chip" style="background:${moving ? '#ffd23f' : col}"></span>${moving ? R('{地球|ちきゅう}が {動|うご}いています') : `${R(s.name)}（${R(s.term)}）`}</div>
       <div class="big"><span class="lbl">${R('{日本|にっぽん}の{南中高度|なんちゅうこうど}')}</span><span class="val" style="color:${moving ? 'var(--ink)' : col}">${Math.round(cur.alt)}°</span></div>`;
@@ -797,7 +817,8 @@ function syncModeUI() {
   $('infoBtn').setAttribute('aria-pressed', String(S.showInfo));
   info.hidden = !S.showInfo;
   $('viewBtn').setAttribute('aria-pressed', String(S.eyeView));
-  $('viewBtn').innerHTML = S.eyeView ? R('{外|そと}から{見|み}る') : R('{人|ひと}の{目|め}で{見|み}る');
+  $('shadowBtn').setAttribute('aria-pressed', String(S.showShadow));
+  $('viewBtn').innerHTML = S.eyeView ? R('{上|うえ}から{見|み}る') : R('{人|ひと}の{目|め}で{見|み}る');
   $('zoomBtn').setAttribute('aria-pressed', String(S.closeUp));
   $('zoomBtn').innerHTML = S.closeUp ? R('{全体|ぜんたい}を{見|み}る') : R('{日本|にっぽん}を{大|おお}きく');
   G.controls.enabled = g; P.controls.enabled = !g && !S.closeUp && !P.camTween;
@@ -829,8 +850,9 @@ $('tabSpace').addEventListener('click', () => { blip(); setMode('space'); });
 $('infoBtn').addEventListener('click', () => { blip(); setInfo(!S.showInfo); });
 $('noonBtn').addEventListener('click', () => { blip(); setNoon(!S.showNoon); });
 $('playBtn').addEventListener('click', () => { blip(); S.playing = !S.playing; if (S.playing && S.time >= CFG.timeMax - 0.01) S.time = CFG.timeMin; syncModeUI(); });
-$('spacePlay').addEventListener('click', () => { blip(); S.spacePlaying = !S.spacePlaying; S.orbitTarget = null; syncModeUI(); });
+$('spacePlay').addEventListener('click', () => { blip(); S.spacePlaying = !S.spacePlaying; S.orbitTarget = null; S.hold = 0; syncModeUI(); });
 $('compareBtn').addEventListener('click', () => { blip(); S.compare = !S.compare; applyGroundHighlight(); syncModeUI(); });
+$('shadowBtn').addEventListener('click', () => { blip(); S.showShadow = !S.showShadow; syncModeUI(); });
 $('viewBtn').addEventListener('click', () => { blip(); setEyeView(!S.eyeView); syncModeUI(); });
 $('zoomBtn').addEventListener('click', () => { blip(); setCloseUp(!S.closeUp); });
 slider.addEventListener('input', () => { S.playing = false; S.time = parseFloat(slider.value); timeLbl.textContent = fmtTime(S.time); $('playBtn').textContent = '▶'; });
@@ -884,6 +906,7 @@ window.__game = {
     setSeason, setMode, setTime, setNoon, setInfo,
     setOrbit(deg) { S.orbitAngle = ((deg % 360) + 360) % 360; S.orbitTarget = null; },
     play(on = true) { if (S.mode === 'ground') S.playing = on; else S.spacePlaying = on; syncModeUI(); },
+    setShadow(on) { S.showShadow = on; syncModeUI(); },
     setCompare(on) { S.compare = on; applyGroundHighlight(); syncModeUI(); },
     setEyeView(on) { setEyeView(on); syncModeUI(); },
     setCloseUp,
