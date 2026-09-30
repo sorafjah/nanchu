@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>季節と南中高度</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* 1画面アプリ：3Dキャンバス全面＋上下のパネル。明るいパネルを3Dの上に重ねる単一テーマ */
+:root{
+  --ink:#1d2a3a;
+  --panel:rgba(255,255,255,0.93);
+  --line:#c9d3de;
+  --sun:#f2a900;
+  --navy:#1f3b64;
+  --summer:#e5533a;
+  --equinox:#23985a;
+  --winter:#2f6fd6;
+  --font:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1b3a;color:var(--ink);font-family:var(--font);
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+button{font-family:var(--font);font-weight:700;color:var(--ink);cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+ruby rt{font-size:0.5em;font-weight:400;letter-spacing:0}
+
+/* 上のバー */
+#top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;display:flex;align-items:flex-start;gap:10px;pointer-events:none}
+#top > *{pointer-events:auto}
+.tabs{display:flex;background:var(--panel);border-radius:14px;padding:4px;gap:4px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.tabs button{min-height:48px;min-width:44px;padding:0 16px;border:0;border-radius:10px;background:transparent;font-size:17px;line-height:1.1}
+.tabs button[aria-pressed="true"]{background:var(--navy);color:#fff}
+#helpBtn{margin-left:auto;width:52px;height:52px;border-radius:50%;border:0;background:var(--panel);font-size:26px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+
+/* 情報カード */
+#info{position:fixed;left:14px;top:calc(76px + env(safe-area-inset-top,0px));width:min(300px,calc(100vw - 28px));background:var(--panel);border-radius:16px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,.2);line-height:1.5}
+#info .season{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:700}
+#info .chip{width:16px;height:16px;border-radius:4px;flex:none}
+#info .date{font-size:13px;font-weight:400;color:#56657a}
+#info .big{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+#info .big .lbl{font-size:14px;font-weight:700}
+#info .big .val{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+#info dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0 0;font-size:15px}
+#info dt{font-weight:700}
+#info dd{margin:0;font-variant-numeric:tabular-nums}
+#info .why{font-size:15px;margin-top:6px}
+#info .why b{color:var(--navy)}
+#info .note{font-size:13px;color:#56657a;margin-top:4px}
+
+/* 下のパネル */
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:0 14px calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none}
+.dock{pointer-events:auto;background:var(--panel);border-radius:18px;padding:10px 12px;box-shadow:0 2px 14px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:10px;width:min(760px,100%)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seasonBtn{min-width:64px;min-height:56px;border-radius:12px;border:3px solid var(--c);background:#fff;font-size:22px;padding:0 10px;line-height:1}
+.seasonBtn small{display:block;font-size:11px;font-weight:400;margin-top:3px}
+.seasonBtn[aria-pressed="true"]{background:var(--c);color:#fff}
+.tog{min-height:52px;min-width:44px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:15px;padding:0 12px}
+.tog[aria-pressed="true"]{border-color:var(--navy);background:#e6edf7}
+.spacer{flex:1}
+#playBtn,#spacePlay{min-width:60px;min-height:52px;border-radius:12px;border:0;background:var(--sun);font-size:20px;padding:0 14px}
+#timeRow{flex-wrap:nowrap}
+#timeLbl{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+input[type=range]{flex:1;min-width:0;height:52px;-webkit-appearance:none;appearance:none;background:transparent;touch-action:none}
+input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:6px;background:linear-gradient(90deg,#253a63,#f3a86b 12%,#8cc8f2 30%,#8cc8f2 70%,#f3a86b 88%,#253a63)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,#ffe36b 45%,#f2a900 46%);border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35);margin-top:-16px}
+input[type=range]::-moz-range-track{height:12px;border-radius:6px;background:#8cc8f2}
+input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;background:#f2a900;border:3px solid #fff}
+
+#toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);background:rgba(255,255,255,.95);color:var(--ink);font-size:30px;font-weight:700;padding:12px 26px;border-radius:16px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+#ver{position:fixed;right:8px;bottom:calc(2px + env(safe-area-inset-bottom,0px));font-size:10px;color:rgba(255,255,255,.7);pointer-events:none}
+
+/* 説明画面 */
+#help{position:fixed;inset:0;background:rgba(8,18,40,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+#help .card{background:#fff;border-radius:22px;max-width:760px;width:100%;max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 24px;line-height:1.7}
+#help h1{font-size:26px;margin:0 0 6px;text-wrap:balance;line-height:1.6}
+#help .lead{font-size:18px;margin:0 0 14px}
+#help .lead b{color:var(--navy)}
+#help ol{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+#help li{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;background:#f3f6fa;border-radius:14px;padding:10px 12px;font-size:17px}
+#help li svg{width:96px;height:64px}
+#help .go{display:block;margin:18px auto 0;min-width:220px;min-height:64px;border:0;border-radius:32px;background:var(--sun);font-size:24px}
+@media (max-width:560px){#help li{grid-template-columns:72px 1fr}#help li svg{width:72px;height:48px}#help h1{font-size:21px}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<!-- build: 2026-09-30 -->
+<div id="stage"></div>
+
+<div id="top">
+  <div class="tabs" role="group" aria-label="見かた">
+    <button id="tabGround" aria-pressed="true" data-ruby>{空|そら}で{見|み}る</button>
+    <button id="tabSpace" aria-pressed="false" data-ruby>{宇宙|うちゅう}から{見|み}る</button>
+  </div>
+  <button id="helpBtn" aria-label="説明を見る">？</button>
+</div>
+
+<div id="info"></div>
+
+<div id="bottom">
+  <div class="dock">
+    <div class="row" id="seasonRow">
+      <button class="seasonBtn" data-season="spring" style="--c:var(--equinox)" data-ruby>{春|はる}<small>3{月|がつ}</small></button>
+      <button class="seasonBtn" data-season="summer" style="--c:var(--summer)" data-ruby>{夏|なつ}<small>6{月|がつ}</small></button>
+      <button class="seasonBtn" data-season="autumn" style="--c:var(--equinox)" data-ruby>{秋|あき}<small>9{月|がつ}</small></button>
+      <button class="seasonBtn" data-season="winter" style="--c:var(--winter)" data-ruby>{冬|ふゆ}<small>12{月|がつ}</small></button>
+      <span class="spacer"></span>
+      <button class="tog groundOnly" id="compareBtn" aria-pressed="false" data-ruby>くらべる</button>
+      <button class="tog groundOnly" id="viewBtn" aria-pressed="false" data-ruby>{人|ひと}の{目|め}で{見|み}る</button>
+      <button id="spacePlay" class="spaceOnly" hidden data-ruby>▶ 1{年|ねん}</button>
+      <button class="tog spaceOnly" id="zoomBtn" aria-pressed="false" hidden data-ruby>{日本|にっぽん}を{大|おお}きく</button>
+    </div>
+    <div class="row groundOnly" id="timeRow">
+      <button id="playBtn" aria-label="時間を動かす">▶</button>
+      <input type="range" id="timeSlider" min="4" max="20" step="0.05" value="12" aria-label="時刻">
+      <span id="timeLbl">12:00</span>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="ver">v2026-09-30</div>
+
+<div id="help">
+  <div class="card scroll">
+    <h1 data-ruby>{季節|きせつ}で {太陽|たいよう}の {高|たか}さが かわるのは なぜ？</h1>
+    <p class="lead" data-ruby>{太陽|たいよう}が {南|みなみ}の{空|そら}で いちばん {高|たか}く のぼったときの {角度|かくど}を <b>「{南中高度|なんちゅうこうど}」</b>と いいます。</p>
+    <ol>
+      <li>
+        <svg viewBox="0 0 96 64" aria-hidden="true">
+          <rect x="2" y="14" width="20" height="36" rx="5" fill="#fff" stroke="#23985a" stroke-width="3"/>
+          <rect x="26" y="14" width="20" height="36" rx="5" fill="#e5533a"/>
+          <rect x="50" y="14" width="20" height="36" rx="5" fill="#fff" stroke="#23985a" stroke-width="3"/>
+          <rect x="74" y="14" width="20" height="36" rx="5" fill="#fff" stroke="#2f6fd6" stroke-width="3"/>
+          <text x="12" y="38" font-size="13" text-anchor="middle" font-weight="700" fill="#1d2a3a">春</text>
+          <text x="36" y="38" font-size="13" text-anchor="middle" font-weight="700" fill="#fff">夏</text>
+          <text x="60" y="38" font-size="13" text-anchor="middle" font-weight="700" fill="#1d2a3a">秋</text>
+          <text x="84" y="38" font-size="13" text-anchor="middle" font-weight="700" fill="#1d2a3a">冬</text>
+        </svg>
+        <span data-ruby>{季節|きせつ}の ボタンを おすと、その{日|ひ}の {太陽|たいよう}の <b>{通|とお}り{道|みち}</b>が {光|ひか}ります。</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 96 64" aria-hidden="true">
+          <rect x="4" y="27" width="88" height="10" rx="5" fill="#8cc8f2"/>
+          <circle cx="56" cy="32" r="14" fill="#ffe36b" stroke="#f2a900" stroke-width="4"/>
+          <path d="M34 32h-12M26 26l-6 6 6 6M78 32h-12M74 26l6 6-6 6" stroke="#1d2a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span data-ruby>▶ を おすか、つまみを {動|うご}かすと、{太陽|たいよう}と {棒|ぼう}の かげが {動|うご}きます。</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 96 64" aria-hidden="true">
+          <path d="M20 44 A30 16 0 0 0 76 44" stroke="#1d2a3a" stroke-width="3" fill="none"/>
+          <path d="M70 38l7 6-8 4" stroke="#1d2a3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="48" cy="22" r="10" fill="#f5c9a8" stroke="#1d2a3a" stroke-width="3"/>
+        </svg>
+        <span data-ruby>{画面|がめん}を {指|ゆび}で なぞると、まわして {見|み}られます。2{本|ほん}の{指|ゆび}で {大|おお}きく・{小|ちい}さく できます。</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 96 64" aria-hidden="true">
+          <circle cx="20" cy="32" r="12" fill="#ffd23f"/>
+          <ellipse cx="54" cy="32" rx="36" ry="12" fill="none" stroke="#8aa0bf" stroke-width="2"/>
+          <circle cx="86" cy="32" r="8" fill="#2c6fbd"/>
+          <line x1="82" y1="22" x2="90" y2="42" stroke="#e5533a" stroke-width="3"/>
+        </svg>
+        <span data-ruby>「{宇宙|うちゅう}から{見|み}る」で、{地球|ちきゅう}の{動|うご}きから <b>なぜ かわるのか</b>を しらべよう。</span>
+      </li>
+    </ol>
+    <button class="go" id="startBtn">はじめる</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ===== 調整値 ===== */
+const CFG = {
+  latitude: 35,          // 観測地の緯度（北緯・度）。東京付近＝35
+  tilt: 23.4,            // 地軸のかたむき（度）
+  // 空で見るモード
+  domeR: 10,             // 天球（空のドーム）の半径
+  groundR: 12.5,         // 地面の半径
+  stickH: 2,             // 棒の高さ
+  timeMin: 4, timeMax: 20,
+  playSpeed: 1.4,        // ▶ のとき 1秒で進む時間（時間）
+  fanR: 3.4,             // 南中高度の扇形の半径
+  // 宇宙から見るモード（大きさはわかりやすさ優先のチート）
+  orbitR: 13, earthR: 2.4, sunR: 2.4,
+  orbitSpeed: 36,        // ▶1年 のとき 1秒で進む角度（度）
+  seasonMoveSpeed: 150,  // 季節ボタンで地球が移動する速さ（度/秒）
+  camTweenTime: 0.8,     // カメラ移動の時間（秒）
+  colors: { summer: '#e5533a', equinox: '#23985a', winter: '#2f6fd6' },
+};
+const FONT = '"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif';
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+
+/* 季節データ：dec＝赤緯（太陽の季節による位置）、orbit＝宇宙モードでの地球の公転角 */
+const SEASONS = {
+  spring: { name: '{春|はる}', term: '{春分|しゅんぶん}', date: '3{月|がつ}20{日|か}ごろ', dec: 0,         orbit: 90,  path: 'equinox' },
+  summer: { name: '{夏|なつ}', term: '{夏至|げし}',       date: '6{月|がつ}21{日|にち}ごろ', dec: CFG.tilt,  orbit: 180, path: 'summer' },
+  autumn: { name: '{秋|あき}', term: '{秋分|しゅうぶん}', date: '9{月|がつ}23{日|にち}ごろ', dec: 0,         orbit: 270, path: 'equinox' },
+  winter: { name: '{冬|ふゆ}', term: '{冬至|とうじ}',     date: '12{月|がつ}22{日|にち}ごろ', dec: -CFG.tilt, orbit: 0,   path: 'winter' },
+};
+const ORDER = ['spring', 'summer', 'autumn', 'winter'];
+
+/* ふりがな：{漢字|かな} → <ruby> */
+const R = s => s.replace(/\{([^|}]+)\|([^}]+)\}/g, '<ruby>$1<rt>$2</rt></ruby>');
+const plain = s => s.replace(/\{([^|}]+)\|([^}]+)\}/g, '$1');
+document.querySelectorAll('[data-ruby]').forEach(el => { el.innerHTML = R(el.innerHTML); });
+
+/* ===== iPad対策（拡大・スクロール防止） ===== */
+document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300 && !e.target.closest('button,input')) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+document.addEventListener('touchmove', e => {
+  if (e.target.closest('input[type=range], .scroll')) return;
+  e.preventDefault();
+}, { passive: false });
+
+/* ===== 音（Web Audio） ===== */
+let ac = null;
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function tone(freq, dur = 0.12, type = 'sine', vol = 0.15, delay = 0) {
+  const a = ac; if (!a || a.state !== 'running') return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const blip = () => tone(660, 0.08, 'triangle', 0.12);
+const chime = () => { tone(784, 0.35, 'sine', 0.14); tone(1175, 0.5, 'sine', 0.12, 0.12); };
+
+/* ===== 状態 ===== */
+const S = {
+  mode: 'ground',          // 'ground' | 'space'
+  season: 'summer',
+  time: 12,                // 太陽の時刻（12:00＝南中）
+  playing: false,
+  compare: false,
+  eyeView: false,          // 人の目で見る
+  orbitAngle: 180,         // 宇宙モード：地球の公転角（度）
+  orbitTarget: null,       // 季節ボタンで向かう角度
+  spacePlaying: false,
+  closeUp: false,
+  helpOpen: true,
+  started: false,
+  frames: 0, elapsed: 0,
+};
+
+/* ===== 太陽の計算 =====
+   dec: 赤緯（度）, t: 太陽の時刻（時）→ 空の中の向き（単位ベクトル）
+   座標：+x＝東、+y＝上、+z＝南、-z＝北 */
+function sunDir(dec, t, lat = CFG.latitude) {
+  const d = dec * D2R, p = lat * D2R, H = (t - 12) * 15 * D2R;
+  const east = -Math.cos(d) * Math.sin(H);
+  const north = Math.sin(d) * Math.cos(p) - Math.cos(d) * Math.cos(H) * Math.sin(p);
+  const up = Math.sin(p) * Math.sin(d) + Math.cos(p) * Math.cos(d) * Math.cos(H);
+  return new THREE.Vector3(east, up, -north);
+}
+const noonAlt = (dec, lat = CFG.latitude) => 90 - lat + dec;
+function dayInfo(dec, lat = CFG.latitude) {
+  const x = -Math.tan(lat * D2R) * Math.tan(dec * D2R);
+  const H0 = Math.acos(Math.max(-1, Math.min(1, x))) * R2D;
+  return { rise: 12 - H0 / 15, set: 12 + H0 / 15, hours: 2 * H0 / 15 };
+}
+const fmtTime = t => { let m = Math.round(t * 60); const h = Math.floor(m / 60); m -= h * 60; return `${h}:${String(m).padStart(2, '0')}`; };
+const fmtHours = h => { let m = Math.round(h * 60 / 10) * 10; const hh = Math.floor(m / 60); m -= hh * 60; return R(`{約|やく}${hh}{時間|じかん}` + (m ? `${m}{分|ぷん}` : '')); };
+
+/* ===== three.js 基本 ===== */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+/* ---- 共通の部品 ---- */
+function makeLabel(text, o = {}) {
+  const fs = o.fs || 64, furi = o.furi || '', pad = 14;
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  const cw = o.cw || 0;
+  const draw = (t, f = furi) => {
+    x.font = `700 ${fs}px ${FONT}`;
+    const w = cw || Math.ceil(x.measureText(t).width) + pad * 2 + 8;
+    const fh = f ? Math.round(fs * 0.42) : 0;
+    const h = Math.ceil(fs * 1.25 + fh + pad);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    x.clearRect(0, 0, w, h);
+    if (o.bg) {
+      x.fillStyle = o.bg; const r = Math.min(24, h / 2);
+      x.beginPath(); x.roundRect(2, 2, w - 4, h - 4, r); x.fill();
+    }
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.lineJoin = 'round';
+    if (f) {
+      x.font = `700 ${Math.round(fs * 0.36)}px ${FONT}`;
+      if (o.stroke) { x.strokeStyle = o.stroke; x.lineWidth = 6; x.strokeText(f, w / 2, pad / 2 + fh / 2 + 2); }
+      x.fillStyle = o.color || '#fff'; x.fillText(f, w / 2, pad / 2 + fh / 2 + 2);
+    }
+    x.font = `700 ${fs}px ${FONT}`;
+    const cy = pad / 2 + fh + fs * 0.66;
+    if (o.stroke) { x.strokeStyle = o.stroke; x.lineWidth = Math.max(6, fs * 0.16); x.strokeText(t, w / 2, cy); }
+    x.fillStyle = o.color || '#fff'; x.fillText(t, w / 2, cy);
+    return h;
+  };
+  draw(text);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.minFilter = THREE.LinearFilter;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: o.depthTest ?? true, depthWrite: false, sizeAttenuation: o.attn ?? true });
+  const sp = new THREE.Sprite(mat);
+  const hW = o.h || 1;
+  const fit = () => sp.scale.set(hW * c.width / c.height, hW, 1);
+  fit();
+  sp.renderOrder = o.order || 0;
+  let cur = text;
+  sp.userData.setText = (t, f) => { if (t === cur) return; cur = t; draw(t, f); tex.needsUpdate = true; fit(); };
+  return sp;
+}
+function glowTexture(inner = 'rgba(255,240,170,1)', outer = 'rgba(255,200,60,0)') {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, inner); g.addColorStop(0.25, 'rgba(255,220,110,0.6)'); g.addColorStop(1, outer);
+  x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function makeArrow(color, radius = 0.06, head = 0.35) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color });
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 10), mat);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(radius * 3, head, 14), mat);
+  g.add(shaft, cone); g.userData = { shaft, cone, head };
+  return g;
+}
+const _up = new THREE.Vector3(0, 1, 0);
+function setArrow(a, from, to) {
+  const dir = new THREE.Vector3().subVectors(to, from); const len = dir.length(); dir.normalize();
+  const { shaft, cone, head } = a.userData; const sl = Math.max(0.01, len - head);
+  a.position.copy(from); a.quaternion.setFromUnitVectors(_up, dir);
+  shaft.scale.set(1, sl, 1); shaft.position.set(0, sl / 2, 0); cone.position.set(0, sl + head / 2, 0);
+}
+function rng(seed) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+const lerpColor = (a, b, k) => a.clone().lerp(b, Math.max(0, Math.min(1, k)));
+
+/* 縦長の画面では視野を広げて、同じ範囲が見えるようにする */
+function fitFov(cam, base) {
+  const a = innerWidth / innerHeight, ref = 1.3;
+  cam.aspect = a;
+  cam.fov = a >= ref ? base : 2 * Math.atan(Math.tan(base / 2 * D2R) * ref / a) * R2D;
+  cam.updateProjectionMatrix();
+}
+
+/* ================================================================
+   空で見るモード
+   ================================================================ */
+const G = {};
+function buildGround() {
+  const scene = new THREE.Scene();
+  G.scene = scene;
+  G.cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 400); G.baseFov = 45; fitFov(G.cam, 45);
+  G.cam.position.set(-17, 11, 23);
+  G.controls = new OrbitControls(G.cam, renderer.domElement);
+  G.controls.target.set(0, 2.5, 0);
+  G.controls.enableDamping = true; G.controls.enablePan = false;
+  G.controls.minDistance = 10; G.controls.maxDistance = 55;
+  G.controls.maxPolarAngle = 86 * D2R;
+
+  G.hemi = new THREE.HemisphereLight(0xdfefff, 0x55703f, 1.2); scene.add(G.hemi);
+  G.dir = new THREE.DirectionalLight(0xffffff, 1.6); scene.add(G.dir);
+
+  // 地面（Canvasで作る芝生）
+  const gc = document.createElement('canvas'); gc.width = gc.height = 512;
+  const gx = gc.getContext('2d'); gx.fillStyle = '#86bf6c'; gx.fillRect(0, 0, 512, 512);
+  const r = rng(7);
+  for (let i = 0; i < 3500; i++) { gx.fillStyle = r() < 0.5 ? 'rgba(60,120,50,0.25)' : 'rgba(170,215,120,0.25)'; gx.fillRect(r() * 512, r() * 512, 3, 3); }
+  const gt = new THREE.CanvasTexture(gc); gt.wrapS = gt.wrapT = THREE.RepeatWrapping; gt.repeat.set(5, 5); gt.colorSpace = THREE.SRGBColorSpace;
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(CFG.groundR, 72), new THREE.MeshLambertMaterial({ map: gt }));
+  ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  // 方位の線（南北・東西）
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+  const ns = new THREE.Mesh(new THREE.PlaneGeometry(0.08, CFG.domeR * 2), lineMat); ns.rotation.x = -Math.PI / 2; ns.position.y = 0.01; scene.add(ns);
+  const ew = new THREE.Mesh(new THREE.PlaneGeometry(CFG.domeR * 2, 0.08), lineMat); ew.rotation.x = -Math.PI / 2; ew.position.y = 0.01; scene.add(ew);
+  // 方位の文字
+  const dirs = [['南', 'みなみ', 0, 1], ['北', 'きた', 0, -1], ['東', 'ひがし', 1, 0], ['西', 'にし', -1, 0]];
+  for (const [k, f, dx, dz] of dirs) {
+    const sp = makeLabel(k, { furi: f, fs: 80, color: '#ffffff', stroke: '#1d2a3a', h: 1.9 });
+    sp.position.set(dx * (CFG.domeR + 1.3), 1.1, dz * (CFG.domeR + 1.3)); scene.add(sp);
+  }
+
+  // 天球（空のドーム）
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(CFG.domeR, 64, 24, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false }));
+  scene.add(dome);
+  const ringPts = []; for (let i = 0; i <= 128; i++) { const a = i / 128 * Math.PI * 2; ringPts.push(new THREE.Vector3(Math.cos(a) * CFG.domeR, 0.02, Math.sin(a) * CFG.domeR)); }
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: 0xffffff })));
+  const meri = []; for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI; meri.push(new THREE.Vector3(0, Math.sin(a) * CFG.domeR, Math.cos(a) * CFG.domeR)); }
+  const meriLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(meri), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.7 }));
+  meriLine.computeLineDistances(); scene.add(meriLine);
+  const zen = makeLabel('天頂', { furi: 'てんちょう', fs: 48, color: '#fff', stroke: '#1d2a3a', h: 1.0 });
+  zen.position.set(0, CFG.domeR + 0.9, -1.8); scene.add(zen);
+
+  // 季節ごとの太陽の通り道
+  G.paths = {};
+  for (const [key, dec, label] of [['summer', CFG.tilt, '夏'], ['equinox', 0, '春・秋'], ['winter', -CFG.tilt, '冬']]) {
+    const di = dayInfo(dec), pts = [];
+    for (let i = 0; i <= 90; i++) { const t = di.rise + (di.set - di.rise) * i / 90; pts.push(sunDir(dec, t).multiplyScalar(CFG.domeR)); }
+    pts[0].y = 0; pts[pts.length - 1].y = 0;
+    const mat = new THREE.MeshBasicMaterial({ color: CFG.colors[key], transparent: true, opacity: 1 });
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.09, 8, false), mat);
+    scene.add(tube);
+    const lab = makeLabel(label, { fs: 56, color: '#fff', bg: CFG.colors[key], h: 0.95, depthTest: false, order: 5 });
+    const np = sunDir(dec, 12).multiplyScalar(CFG.domeR + 0.9); lab.position.copy(np); scene.add(lab);
+    // 日の出・日の入りの点
+    const dots = [];
+    for (const p of [pts[0], pts[pts.length - 1]]) {
+      const d = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), mat); d.position.copy(p); scene.add(d); dots.push(d);
+    }
+    G.paths[key] = { tube, mat, lab, dots };
+  }
+
+  // 棒と かげ
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, CFG.stickH, 12), new THREE.MeshLambertMaterial({ color: 0x8a5a2b }));
+  stick.position.y = CFG.stickH / 2; scene.add(stick);
+  const top = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), new THREE.MeshLambertMaterial({ color: 0xd24b3a }));
+  top.position.y = CFG.stickH; scene.add(top);
+  const stickLab = makeLabel('棒', { furi: 'ぼう', fs: 56, color: '#fff', stroke: '#1d2a3a', h: 1.0 });
+  stickLab.position.set(-0.9, CFG.stickH + 0.45, -0.4); scene.add(stickLab); G.stickLab = stickLab;
+  const sg = new THREE.PlaneGeometry(1, 0.3); sg.rotateX(-Math.PI / 2); sg.translate(0.5, 0.03, 0);
+  G.shadow = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: 0.75, depthWrite: false }));
+  scene.add(G.shadow);
+  G.shadowTip = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20), new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: 0.75 }));
+  G.shadowTip.rotation.x = -Math.PI / 2; scene.add(G.shadowTip);
+
+  // 太陽
+  G.sun = new THREE.Group();
+  G.sun.add(new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffd23f })));
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.scale.set(4, 4, 1); G.sun.add(glow);
+  scene.add(G.sun);
+  // 太陽の光（太陽 → 棒の先）
+  G.ray = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+    new THREE.LineDashedMaterial({ color: 0xffc400, dashSize: 0.3, gapSize: 0.2 }));
+  scene.add(G.ray);
+
+  // 南中高度の扇形（季節を変えると作りなおす）
+  G.fan = new THREE.Group(); scene.add(G.fan);
+}
+
+function rebuildFan() {
+  const f = G.fan; while (f.children.length) { const c = f.children.pop(); c.geometry?.dispose?.(); }
+  const s = SEASONS[S.season], alt = noonAlt(s.dec), col = CFG.colors[s.path];
+  // 南北の面（x=0）に、南の地平線から南中の太陽まで
+  const fanMesh = new THREE.Mesh(new THREE.CircleGeometry(CFG.fanR, 48, 0, alt * D2R),
+    new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  fanMesh.rotation.y = -Math.PI / 2; fanMesh.position.y = 0.04; f.add(fanMesh);
+  const arc = []; for (let i = 0; i <= 48; i++) { const a = alt * D2R * i / 48; arc.push(new THREE.Vector3(0, Math.sin(a) * CFG.fanR + 0.04, Math.cos(a) * CFG.fanR)); }
+  f.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arc), new THREE.LineBasicMaterial({ color: col })));
+  // 南中の太陽への線
+  const np = sunDir(s.dec, 12).multiplyScalar(CFG.domeR);
+  const nl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.04, 0), np]),
+    new THREE.LineDashedMaterial({ color: col, dashSize: 0.3, gapSize: 0.2 }));
+  nl.computeLineDistances(); f.add(nl);
+  const south = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.05, 0), new THREE.Vector3(0, 0.05, CFG.domeR)]),
+    new THREE.LineBasicMaterial({ color: col })); f.add(south);
+  // 南中の位置の目じるし
+  const mark = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 10), new THREE.MeshBasicMaterial({ color: col }));
+  mark.position.copy(np); f.add(mark);
+  // 角度の文字
+  const la = alt / 2 * D2R, lr = CFG.fanR + 1.3;
+  const lab = makeLabel(`${Math.round(alt)}°`, { fs: 64, color: '#fff', bg: col, h: 1.1, depthTest: false, order: 6 });
+  lab.position.set(0, Math.sin(la) * lr + 0.2, Math.cos(la) * lr); f.add(lab);
+}
+
+function updateGround(dt) {
+  if (S.playing) {
+    const prev = S.time;
+    S.time += CFG.playSpeed * dt;
+    if (prev < 12 && S.time >= 12) { chime(); toast(R('{南中|なんちゅう}！')); }
+    if (S.time > CFG.timeMax) S.time = CFG.timeMin;
+    syncTimeUI();
+  }
+  const s = SEASONS[S.season];
+  const v = sunDir(s.dec, S.time);
+  const alt = Math.asin(Math.max(-1, Math.min(1, v.y))) * R2D;
+  G.sun.position.copy(v).multiplyScalar(CFG.domeR);
+  G.sun.visible = alt > -1;
+  // 空の色
+  const night = new THREE.Color(0x0d1b3a), dawn = new THREE.Color(0xf0a070), day = new THREE.Color(0x8cc8f2);
+  const sky = alt < 0 ? lerpColor(night, dawn, (alt + 8) / 8) : lerpColor(dawn, day, alt / 12);
+  G.scene.background = sky;
+  G.dir.position.copy(v).multiplyScalar(20);
+  G.dir.intensity = alt > 0 ? 0.4 + 1.2 * Math.min(1, alt / 20) : 0;
+  G.hemi.intensity = alt > 0 ? 1.2 : 0.55 + 0.65 * Math.max(0, (alt + 8) / 8);
+  // かげ（見た目だけの計算で作る）
+  const up = alt > 0.3;
+  G.shadow.visible = G.shadowTip.visible = up;
+  G.ray.visible = up;
+  if (up) {
+    const L = Math.min(CFG.groundR - 0.2, CFG.stickH / Math.tan(alt * D2R));
+    const dx = -v.x, dz = -v.z, hl = Math.hypot(dx, dz) || 1;
+    G.shadow.scale.x = L; G.shadow.rotation.y = Math.atan2(-dz / hl, dx / hl);
+    G.shadowTip.position.set(dx / hl * L, 0.035, dz / hl * L);
+    const pos = G.ray.geometry.attributes.position;
+    pos.setXYZ(0, G.sun.position.x, G.sun.position.y, G.sun.position.z); pos.setXYZ(1, 0, CFG.stickH, 0); pos.needsUpdate = true;
+    G.ray.computeLineDistances();
+  }
+  S.cur = { alt, shadow: up ? CFG.stickH / Math.tan(alt * D2R) / CFG.stickH : null };
+}
+
+function applyGroundHighlight() {
+  const key = SEASONS[S.season].path;
+  for (const [k, p] of Object.entries(G.paths)) {
+    const on = k === key;
+    p.mat.opacity = on || S.compare ? 1 : 0.18;
+    p.lab.visible = on || S.compare;
+    p.tube.scale.setScalar(1);
+  }
+}
+
+function setEyeView(on) {
+  S.eyeView = on;
+  const c = G.controls;
+  if (on) {
+    const eye = new THREE.Vector3(-1.6, 1.5, -2.0);
+    const look = new THREE.Vector3(0.15, 0.6, 1).normalize();
+    G.cam.position.copy(eye);
+    c.target.copy(eye).addScaledVector(look, 0.05);
+    c.minDistance = 0.05; c.maxDistance = 0.05; c.enableZoom = false;
+    c.minPolarAngle = 80 * D2R; c.maxPolarAngle = 178 * D2R; c.rotateSpeed = -0.35;
+    G.baseFov = 70;
+  } else {
+    c.minDistance = 10; c.maxDistance = 55; c.enableZoom = true;
+    c.minPolarAngle = 0; c.maxPolarAngle = 86 * D2R; c.rotateSpeed = 1;
+    c.target.set(0, 2.5, 0); G.cam.position.set(-17, 11, 23); G.baseFov = 45;
+  }
+  G.stickLab.visible = !on; G.fan.visible = !on;
+  fitFov(G.cam, G.baseFov); c.update();
+}
+
+/* ================================================================
+   宇宙から見るモード
+   ================================================================ */
+const P = {};
+const AXIS = new THREE.Vector3(Math.sin(CFG.tilt * D2R), Math.cos(CFG.tilt * D2R), 0).normalize(); // 地軸（北）の向き。宇宙の中でずっと同じ
+function orbitPos(deg) { const a = deg * D2R; return new THREE.Vector3(Math.cos(a) * CFG.orbitR, 0, -Math.sin(a) * CFG.orbitR); }
+
+function buildSpace() {
+  const scene = new THREE.Scene(); P.scene = scene;
+  scene.background = new THREE.Color(0x04060f);
+  P.cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 600); fitFov(P.cam, 45);
+  P.home = { pos: new THREE.Vector3(1, 16, 36), target: new THREE.Vector3(-4, -2.5, 0) };
+  P.cam.position.copy(P.home.pos);
+  P.controls = new OrbitControls(P.cam, renderer.domElement);
+  P.controls.target.copy(P.home.target);
+  P.controls.enableDamping = true; P.controls.enablePan = false;
+  P.controls.minDistance = 3; P.controls.maxDistance = 90;
+
+  // 星
+  const r = rng(11), sp = [];
+  for (let i = 0; i < 900; i++) { const u = r() * 2 - 1, a = r() * Math.PI * 2, s = Math.sqrt(1 - u * u); sp.push(Math.cos(a) * s * 200, u * 200, Math.sin(a) * s * 200); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.9 })));
+
+  // 太陽
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(CFG.sunR, 32, 20), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+  scene.add(sun);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.scale.set(14, 14, 1); scene.add(glow);
+  const sl = makeLabel('太陽', { furi: 'たいよう', fs: 60, color: '#fff', stroke: '#000', h: 1.4 });
+  sl.position.set(0, CFG.sunR + 1.6, 0); scene.add(sl);
+  const light = new THREE.PointLight(0xffffff, 3.2, 0, 0); scene.add(light);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+
+  // 公転の道
+  const op = []; for (let i = 0; i <= 180; i++) op.push(orbitPos(i * 2));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(op), new THREE.LineBasicMaterial({ color: 0x5c7399 })));
+  // 季節の目じるし
+  for (const k of ORDER) {
+    const s = SEASONS[k], p = orbitPos(s.orbit);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), new THREE.MeshBasicMaterial({ color: CFG.colors[s.path] }));
+    dot.position.copy(p); scene.add(dot);
+    const lab = makeLabel(plain(s.term), { furi: s.term.match(/\|([^}]+)\}/)[1], fs: 56, color: '#fff', bg: CFG.colors[s.path], h: 1.5 });
+    lab.position.copy(p).multiplyScalar((CFG.orbitR + 3.6) / CFG.orbitR); lab.position.y = 1.2; scene.add(lab);
+  }
+  // 公転の向きの矢印
+  for (const a of [45, 135, 225, 315]) {
+    const ar = makeArrow(0x8aa0bf, 0.05, 0.6);
+    setArrow(ar, orbitPos(a - 5), orbitPos(a + 5)); scene.add(ar);
+  }
+
+  // 地球
+  P.earth = new THREE.Group(); scene.add(P.earth);
+  const tiltG = new THREE.Group(); tiltG.quaternion.setFromUnitVectors(_up, AXIS); P.earth.add(tiltG);
+  const ec = document.createElement('canvas'); ec.width = 1024; ec.height = 512;
+  const ex = ec.getContext('2d'); ex.fillStyle = '#2c6fbd'; ex.fillRect(0, 0, 1024, 512);
+  const er = rng(23);
+  for (let i = 0; i < 26; i++) {
+    const cx = er() * 1024, cy = 90 + er() * 330, n = 6 + Math.floor(er() * 6);
+    ex.fillStyle = er() < 0.3 ? '#b99a5b' : '#4f9a4a';
+    for (let j = 0; j < n; j++) { ex.beginPath(); ex.ellipse(cx + (er() - 0.5) * 120, cy + (er() - 0.5) * 70, 20 + er() * 50, 12 + er() * 30, er() * 3, 0, Math.PI * 2); ex.fill(); }
+  }
+  ex.fillStyle = '#f2f6fa'; ex.fillRect(0, 0, 1024, 34); ex.fillRect(0, 478, 1024, 34);
+  const et = new THREE.CanvasTexture(ec); et.colorSpace = THREE.SRGBColorSpace;
+  const globe = new THREE.Mesh(new THREE.SphereGeometry(CFG.earthR, 48, 32), new THREE.MeshLambertMaterial({ map: et }));
+  tiltG.add(globe);
+  // 地軸
+  const axis = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, CFG.earthR * 3.4, 10), new THREE.MeshBasicMaterial({ color: 0xff6b5a }));
+  tiltG.add(axis);
+  const nLab = makeLabel('北', { furi: 'きた', fs: 56, color: '#fff', stroke: '#000', h: 0.9 });
+  nLab.position.set(0, CFG.earthR * 1.7 + 0.6, 0); tiltG.add(nLab);
+  const axLab = makeLabel('地軸', { furi: 'ちじく', fs: 52, color: '#ffb3a8', stroke: '#000', h: 0.8 });
+  axLab.position.set(0.9, -CFG.earthR * 1.7, 0); tiltG.add(axLab);
+  // 赤道と 日本の緯度の線
+  const eq = new THREE.Mesh(new THREE.TorusGeometry(CFG.earthR * 1.004, 0.025, 6, 96), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  eq.rotation.x = Math.PI / 2; tiltG.add(eq);
+  const lr = CFG.earthR * Math.cos(CFG.latitude * D2R);
+  const lat = new THREE.Mesh(new THREE.TorusGeometry(lr * 1.006, 0.03, 6, 96), new THREE.MeshBasicMaterial({ color: 0x9fe3ff }));
+  lat.rotation.x = Math.PI / 2; lat.position.y = CFG.earthR * Math.sin(CFG.latitude * D2R); tiltG.add(lat);
+
+  // 日本（南中の瞬間の地面）
+  P.spot = new THREE.Group(); scene.add(P.spot);
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.05, 32), new THREE.MeshLambertMaterial({ color: 0x86bf6c }));
+  plate.position.y = 0.03; P.spot.add(plate);
+  const pst = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8), new THREE.MeshLambertMaterial({ color: 0x8a5a2b }));
+  pst.position.y = 0.33; P.spot.add(pst);
+  P.spotLab = makeLabel('日本', { furi: 'にっぽん', fs: 52, color: '#fff', stroke: "#000", h: 0.045, depthTest: false, order: 4, attn: false });
+  scene.add(P.spotLab);
+  P.ray = makeArrow(0xffd23f, 0.05, 0.4); scene.add(P.ray);
+  P.fan = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+  scene.add(P.fan);
+  P.fanLab = makeLabel('55°', { fs: 60, color: '#1d2a3a', bg: '#ffd23f', h: 0.048, depthTest: false, order: 6, cw: 190, attn: false });
+  scene.add(P.fanLab);
+  P.lastFanAlt = null;
+  P.camTween = null;
+}
+
+/* 地球の位置から「日本の南中」のようすを計算（数値テスト用にも公開） */
+function spaceGeom(deg) {
+  const ep = orbitPos(deg);
+  const s = ep.clone().negate().normalize();               // 地球 → 太陽の向き
+  const se = s.clone().addScaledVector(AXIS, -s.dot(AXIS)).normalize();
+  const p = se.clone().multiplyScalar(Math.cos(CFG.latitude * D2R)).addScaledVector(AXIS, Math.sin(CFG.latitude * D2R)).normalize(); // 日本の真上の向き（正午）
+  const south = p.clone().multiplyScalar(p.dot(AXIS)).sub(AXIS).normalize(); // 日本から見た南
+  const alt = Math.asin(Math.max(-1, Math.min(1, p.dot(s)))) * R2D;
+  const dec = Math.asin(s.dot(AXIS)) * R2D;
+  return { ep, s, p, south, alt, dec };
+}
+
+function nearestSeason(deg) {
+  let best = 'spring', bd = 999;
+  for (const k of ORDER) { let d = Math.abs(((deg - SEASONS[k].orbit) % 360 + 540) % 360 - 180); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+
+function updateSpace(dt) {
+  if (S.spacePlaying) {
+    S.orbitAngle = (S.orbitAngle + CFG.orbitSpeed * dt) % 360;
+    const ns = nearestSeason(S.orbitAngle);
+    if (ns !== S.season) { S.season = ns; syncSeasonUI(); }
+  } else if (S.orbitTarget !== null) {
+    let diff = ((S.orbitTarget - S.orbitAngle) % 360 + 540) % 360 - 180;
+    const step = CFG.seasonMoveSpeed * dt;
+    if (Math.abs(diff) <= step) { S.orbitAngle = S.orbitTarget; S.orbitTarget = null; }
+    else S.orbitAngle = (S.orbitAngle + Math.sign(diff) * step + 360) % 360;
+  }
+  const g = spaceGeom(S.orbitAngle);
+  P.earth.position.copy(g.ep);
+  const spot = g.ep.clone().addScaledVector(g.p, CFG.earthR);
+  P.spot.position.copy(spot);
+  P.spot.quaternion.setFromUnitVectors(_up, g.p);
+  P.spotLab.position.copy(spot).addScaledVector(g.p, 1.2).addScaledVector(g.south, -0.6);
+  setArrow(P.ray, spot.clone().addScaledVector(g.s, 4.2), spot.clone().addScaledVector(g.s, 0.05));
+  // 扇形：日本の地面で、南の方向 → 太陽の方向
+  if (P.lastFanAlt === null || Math.abs(P.lastFanAlt - g.alt) > 0.05) {
+    P.fan.geometry.dispose(); P.fan.geometry = new THREE.CircleGeometry(1.25, 32, 0, g.alt * D2R); P.lastFanAlt = g.alt;
+  }
+  const z = new THREE.Vector3().crossVectors(g.south, g.p);
+  P.fan.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(g.south, g.p, z));
+  P.fan.position.copy(spot).addScaledVector(g.p, 0.07);
+  const la = g.alt / 2 * D2R;
+  P.fanLab.position.copy(spot).addScaledVector(g.south, Math.cos(la) * 1.95).addScaledVector(g.p, Math.sin(la) * 1.95 + 0.1);
+  P.fanLab.userData.setText(`${Math.round(g.alt)}°`);
+  S.cur = { alt: g.alt, dec: g.dec };
+
+  // カメラ：近くで見るときは「日本の地面」が水平に見えるよう、カメラの上向きを日本の真上に合わせる
+  if (S.closeUp || P.camTween) {
+    const want = S.closeUp ? closeUpView() : { pos: P.home.pos, target: P.home.target, up: _up };
+    let pos = want.pos, tgt = want.target, up = want.up;
+    if (P.camTween) {
+      const tw = P.camTween; tw.k = Math.min(1, tw.k + dt / CFG.camTweenTime);
+      const e = tw.k < 0.5 ? 2 * tw.k * tw.k : 1 - Math.pow(-2 * tw.k + 2, 2) / 2;
+      pos = tw.fromPos.clone().lerp(want.pos, e); tgt = tw.fromT.clone().lerp(want.target, e);
+      up = tw.fromUp.clone().lerp(want.up, e).normalize();
+      if (tw.k >= 1) P.camTween = null;
+    }
+    P.cam.up.copy(up); P.cam.position.copy(pos); P.cam.lookAt(tgt);
+    if (!S.closeUp && !P.camTween) { P.cam.up.set(0, 1, 0); P.controls.target.copy(P.home.target); P.cam.lookAt(P.home.target); }
+    P.controls.enabled = S.mode === 'space' && !S.closeUp && !P.camTween;
+  }
+}
+function closeUpView() {
+  const g = spaceGeom(S.orbitAngle);
+  const spot = g.ep.clone().addScaledVector(g.p, CFG.earthR);
+  const side = new THREE.Vector3().crossVectors(g.s, AXIS).normalize();   // 南北の面に垂直＝横から見る向き
+  const right = new THREE.Vector3().crossVectors(side.clone().negate(), g.p);
+  if (right.dot(g.south) < 0) side.negate();                             // 南（太陽の側）が画面の右になるように
+  return {
+    pos: spot.clone().addScaledVector(side, 6.2).addScaledVector(g.p, 0.9).addScaledVector(g.south, 0.9),
+    target: spot.clone().addScaledVector(g.p, 0.7).addScaledVector(g.south, 0.9),
+    up: g.p.clone(),
+  };
+}
+function setCloseUp(on) {
+  S.closeUp = on;
+  P.camTween = { k: 0, fromPos: P.cam.position.clone(), fromT: P.controls.target.clone(), fromUp: P.cam.up.clone() };
+  if (!on) {
+    // 近くで見ていたときの注視点を引き継ぐ
+    const g = spaceGeom(S.orbitAngle);
+    P.camTween.fromT = g.ep.clone().addScaledVector(g.p, CFG.earthR + 0.7);
+  }
+  P.controls.enabled = false;
+  syncModeUI();
+}
+
+/* ================================================================
+   画面（UI）
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const info = $('info'), slider = $('timeSlider'), timeLbl = $('timeLbl');
+let infoKey = '';
+function renderInfo() {
+  const s = SEASONS[S.season], col = CFG.colors[s.path];
+  let html, key;
+  if (S.mode === 'ground') {
+    const na = Math.round(noonAlt(s.dec)), di = dayInfo(s.dec), cur = S.cur || {};
+    const altTxt = cur.alt > 0.3 ? `${Math.round(cur.alt)}°` : R('しずんでいる');
+    const shTxt = cur.alt > 0.3 ? R(`{棒|ぼう}の ${cur.shadow < 10 ? cur.shadow.toFixed(1) : '10{以上|いじょう}'} {倍|ばい}`) : '―';
+    key = `g|${S.season}|${altTxt}|${shTxt}`;
+    html = `<div class="season"><span class="chip" style="background:${col}"></span>${R(s.name)}（${R(s.term)}）</div>
+      <div class="date">${R(s.date)}</div>
+      <div class="big"><span class="lbl">${R('{南中高度|なんちゅうこうど}')}</span><span class="val" style="color:${col}">${na}°</span></div>
+      <dl><dt>${R('いまの{高|たか}さ')}</dt><dd>${altTxt}</dd>
+      <dt>${R('かげの{長|なが}さ')}</dt><dd>${shTxt}</dd>
+      <dt>${R('{昼|ひる}の{長|なが}さ')}</dt><dd>${fmtHours(di.hours)}</dd></dl>
+      ${s.dec === 0 ? `<div class="note">${R('{春|はる}と{秋|あき}は {同|おな}じ{通|とお}り{道|みち}です')}</div>` : ''}`;
+  } else {
+    const cur = S.cur || { alt: noonAlt(s.dec), dec: s.dec };
+    const moving = S.spacePlaying || S.orbitTarget !== null;
+    let why;
+    if (cur.dec > 8) why = '{北半球|きたはんきゅう}が {太陽|たいよう}の{方|ほう}へ かたむいている。{光|ひかり}が {高|たか}い{角度|かくど}から あたるので、<b>{南中高度|なんちゅうこうど}が {高|たか}い</b>。';
+    else if (cur.dec < -8) why = '{北半球|きたはんきゅう}が {太陽|たいよう}と {反対|はんたい}へ かたむいている。{光|ひかり}が {低|ひく}い{角度|かくど}から あたるので、<b>{南中高度|なんちゅうこうど}が {低|ひく}い</b>。';
+    else why = '{太陽|たいよう}の{方|ほう}にも {反対|はんたい}にも かたむいていない。<b>{南中高度|なんちゅうこうど}は まんなか</b>。';
+    const title = moving ? R('{地球|ちきゅう}が {動|うご}いています') : `${R(s.name)}（${R(s.term)}）`;
+    key = `s|${moving}|${S.season}|${Math.round(cur.alt)}|${why}`;
+    html = `<div class="season"><span class="chip" style="background:${moving ? '#ffd23f' : col}"></span>${title}</div>
+      <div class="big"><span class="lbl">${R('{日本|にっぽん}の{南中高度|なんちゅうこうど}')}</span><span class="val" style="color:${moving ? 'var(--ink)' : col}">${Math.round(cur.alt)}°</span></div>
+      <div class="why">${R(why)}</div>
+      <div class="note">${R('{地軸|ちじく}は かたむいたまま、{太陽|たいよう}のまわりを 1{年|ねん}で 1{周|しゅう}します。')}</div>`;
+  }
+  if (key !== infoKey) { infoKey = key; info.innerHTML = html; }
+}
+function syncTimeUI() { slider.value = S.time; timeLbl.textContent = fmtTime(S.time); }
+function syncSeasonUI() {
+  document.querySelectorAll('.seasonBtn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.season === S.season)));
+  if (G.scene) { applyGroundHighlight(); rebuildFan(); }
+}
+function syncModeUI() {
+  const g = S.mode === 'ground';
+  $('tabGround').setAttribute('aria-pressed', String(g));
+  $('tabSpace').setAttribute('aria-pressed', String(!g));
+  document.querySelectorAll('.groundOnly').forEach(el => el.hidden = !g);
+  document.querySelectorAll('.spaceOnly').forEach(el => el.hidden = g);
+  $('playBtn').textContent = S.playing ? '❚❚' : '▶';
+  $('spacePlay').innerHTML = S.spacePlaying ? '❚❚ とめる' : R('▶ 1{年|ねん}');
+  $('compareBtn').setAttribute('aria-pressed', String(S.compare));
+  $('viewBtn').setAttribute('aria-pressed', String(S.eyeView));
+  $('viewBtn').innerHTML = S.eyeView ? R('{外|そと}から{見|み}る') : R('{人|ひと}の{目|め}で{見|み}る');
+  $('zoomBtn').setAttribute('aria-pressed', String(S.closeUp));
+  $('zoomBtn').innerHTML = S.closeUp ? R('{全体|ぜんたい}を{見|み}る') : R('{日本|にっぽん}を{大|おお}きく');
+  G.controls.enabled = g; P.controls.enabled = !g && !S.closeUp && !P.camTween;
+}
+let toastTimer = 0;
+function toast(html) { const t = $('toast'); t.innerHTML = html; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1300); }
+
+function setSeason(k) {
+  if (!SEASONS[k]) return;
+  S.season = k;
+  if (S.mode === 'space') { S.spacePlaying = false; S.orbitTarget = SEASONS[k].orbit; }
+  syncSeasonUI(); syncModeUI();
+}
+function setMode(m) {
+  if (m === S.mode) return;
+  S.mode = m;
+  S.playing = false; S.spacePlaying = false;
+  if (m === 'space') { S.orbitAngle = SEASONS[S.season].orbit; S.orbitTarget = null; }
+  else { S.season = nearestSeason(S.orbitAngle); S.orbitTarget = null; syncSeasonUI(); }
+  infoKey = ''; syncModeUI();
+}
+function setTime(t) { S.time = Math.max(CFG.timeMin, Math.min(CFG.timeMax, t)); syncTimeUI(); }
+
+document.querySelectorAll('.seasonBtn').forEach(b => b.addEventListener('click', () => { blip(); setSeason(b.dataset.season); }));
+$('tabGround').addEventListener('click', () => { blip(); setMode('ground'); });
+$('tabSpace').addEventListener('click', () => { blip(); setMode('space'); });
+$('playBtn').addEventListener('click', () => { blip(); S.playing = !S.playing; if (S.playing && S.time >= CFG.timeMax - 0.01) S.time = CFG.timeMin; syncModeUI(); });
+$('spacePlay').addEventListener('click', () => { blip(); S.spacePlaying = !S.spacePlaying; S.orbitTarget = null; syncModeUI(); });
+$('compareBtn').addEventListener('click', () => { blip(); S.compare = !S.compare; applyGroundHighlight(); syncModeUI(); });
+$('viewBtn').addEventListener('click', () => { blip(); setEyeView(!S.eyeView); syncModeUI(); });
+$('zoomBtn').addEventListener('click', () => { blip(); setCloseUp(!S.closeUp); });
+slider.addEventListener('input', () => { S.playing = false; S.time = parseFloat(slider.value); timeLbl.textContent = fmtTime(S.time); syncModeUI(); });
+
+function openHelp() { S.helpOpen = true; $('help').hidden = false; $('startBtn').textContent = S.started ? 'つづける' : 'はじめる'; }
+function closeHelp() { audio(); S.helpOpen = false; S.started = true; $('help').hidden = true; blip(); }
+$('helpBtn').addEventListener('click', openHelp);
+$('startBtn').addEventListener('click', closeHelp);
+
+/* ================================================================
+   ループ
+   ================================================================ */
+function update(dt) {
+  S.frames++;
+  if (S.helpOpen) return;           // 説明中は一時停止
+  S.elapsed += dt;
+  if (S.mode === 'ground') updateGround(dt); else updateSpace(dt);
+  renderInfo();
+}
+function render() {
+  if (S.mode === 'ground') { G.controls.update(); renderer.render(G.scene, G.cam); }
+  else { if (P.controls.enabled) P.controls.update(); renderer.render(P.scene, P.cam); }
+}
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 1 / 30);  // 120Hz対応：1/30秒でクランプ
+  last = now;
+  update(dt); render();
+  requestAnimationFrame(loop);
+}
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  fitFov(G.cam, G.baseFov); fitFov(P.cam, 45);
+});
+
+/* ===== テスト用フック =====
+   太陽は .position ではなく S.season（赤緯）と S.time（太陽の時刻）から毎フレーム計算して置いている。
+   宇宙モードの地球も S.orbitAngle（公転角：冬至0・春分90・夏至180・秋分270）から計算している。
+   外から動かすときは api.setTime / api.setSeason / api.setOrbit を使う。 */
+window.__game = {
+  state: S, CFG,
+  get camera() { return S.mode === 'ground' ? G.cam : P.cam; },
+  ground: G, space: P,
+  api: {
+    tick(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); render(); return S.frames; },
+    getState() {
+      const s = SEASONS[S.season];
+      return { mode: S.mode, season: S.season, time: S.time, playing: S.playing, spacePlaying: S.spacePlaying,
+        orbitAngle: S.orbitAngle, closeUp: S.closeUp, eyeView: S.eyeView, compare: S.compare, helpOpen: S.helpOpen,
+        noonAlt: noonAlt(s.dec), cur: S.cur, day: dayInfo(s.dec), frames: S.frames, elapsed: S.elapsed };
+    },
+    start: closeHelp, openHelp,
+    setSeason, setMode, setTime,
+    setOrbit(deg) { S.orbitAngle = ((deg % 360) + 360) % 360; S.orbitTarget = null; },
+    play(on = true) { if (S.mode === 'ground') S.playing = on; else S.spacePlaying = on; syncModeUI(); },
+    setCompare(on) { S.compare = on; applyGroundHighlight(); syncModeUI(); },
+    setEyeView(on) { setEyeView(on); syncModeUI(); },
+    setCloseUp,
+    sunDir: (dec, t) => sunDir(dec, t).toArray(), spaceGeom: deg => { const g = spaceGeom(deg); return { alt: g.alt, dec: g.dec }; },
+  },
+};
+
+/* ===== 起動（フォントを読んでから文字の板を作る） ===== */
+async function boot() {
+  try { await Promise.race([document.fonts.load(`700 64px "BIZ UDPGothic"`), new Promise(r => setTimeout(r, 2000))]); } catch (e) {}
+  buildGround(); buildSpace();
+  syncSeasonUI(); syncModeUI(); syncTimeUI();
+  updateGround(0); renderInfo();
+  requestAnimationFrame(t => { last = t; loop(t); });
+  window.__game.ready = true;
+}
+boot();
+</script>
+</body>
+</html>
