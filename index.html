@@ -109,7 +109,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
 </script>
 </head>
 <body>
-<!-- build: 2026-09-30e -->
+<!-- build: 2026-10-01b -->
 <div id="stage"></div>
 
 <div id="top">
@@ -141,6 +141,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       </div>
       <span class="spacer spaceOnly" hidden></span>
       <button id="spacePlay" class="tog spaceOnly" aria-pressed="false" hidden data-ruby>▶ 1{年|ねん}</button>
+      <button class="tog spaceOnly" id="linesBtn" aria-pressed="false" hidden data-ruby>{地軸|ちじく}・{赤道|せきどう}</button>
       <button class="tog spaceOnly" id="zoomBtn" aria-pressed="false" hidden data-ruby>{日本|にっぽん}を{大|おお}きく</button>
     </div>
   </div>
@@ -192,7 +193,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       </li>
     </ol>
     <button class="go" id="startBtn">はじめる</button>
-    <p class="ver">バージョン v2026-09-30e</p>
+    <p class="ver">バージョン v2026-10-01b</p>
   </div>
 </div>
 
@@ -213,7 +214,7 @@ const CFG = {
   fanR: 3.4,             // 南中高度の扇形の半径
   shadowOpacity: 0.32,   // かげの濃さ
   groundGlow: 2.0,       // 空で見る：太陽のまわりの光の大きさ
-  spaceGlow: 4.6,        // 宇宙から見る：太陽のまわりの光の大きさ
+  spaceGlow: 6.5,        // 宇宙から見る：太陽のまわりの光の大きさ
   // 宇宙から見るモード（大きさはわかりやすさ優先のチート）
   orbitR: 13, earthR: 2.4, sunR: 1.3,   // 太陽は便宜上小さくしている
   orbitSpeed: 36,        // ▶1年 のとき 1秒で進む角度（度）
@@ -283,6 +284,7 @@ const S = {
   showInfo: false,         // くわしく（左上のカード）
   showNoon: false,         // 南中高度の表示
   showShadow: false,       // 人のかげの表示
+  showLines: false,        // 宇宙：地軸・赤道・緯度の線の表示
   orbitAngle: 180,         // 宇宙モード：地球の公転角（度）
   orbitTarget: null,       // 季節ボタンで向かう角度（公転の向きにだけ進む）
   spacePlaying: false,
@@ -606,7 +608,7 @@ function buildSpace() {
   P.sunMat = new THREE.MeshBasicMaterial({ color: 0xd9a93a });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(CFG.sunR, 48, 32), P.sunMat));
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.35; scene.add(glow);
+  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.75; scene.add(glow);
   const sl = makeLabel('太陽', { furi: 'たいよう', fs: 60, color: '#fff', stroke: '#000', h: 1.4 });
   sl.position.set(0, CFG.sunR + 1.3, 0); scene.add(sl);
   scene.add(new THREE.PointLight(0xffffff, 3.2, 0, 0));
@@ -642,23 +644,20 @@ function buildSpace() {
   P.tiltG.add(P.globe);
   // 地軸（黄）
   const axis = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, CFG.earthR * 3.4, 10), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
-  P.tiltG.add(axis);
-  const axLab = makeLabel('地軸', { furi: 'ちじく', fs: 52, color: '#ffe27a', stroke: '#000', h: 0.8 });
-  axLab.position.set(0.9, -CFG.earthR * 1.7, 0); P.tiltG.add(axLab);
+  P.lines = new THREE.Group(); P.tiltG.add(P.lines);   // 地軸・赤道・緯度の線（ボタンで表示）
+  P.lines.add(axis);
   // 赤道（赤）と 日本の緯度の線
   const eq = new THREE.Mesh(new THREE.TorusGeometry(CFG.earthR * 1.004, 0.03, 6, 96), new THREE.MeshBasicMaterial({ color: 0xe8413a }));
-  eq.rotation.x = Math.PI / 2; P.tiltG.add(eq);
+  eq.rotation.x = Math.PI / 2; P.lines.add(eq);
   const lr = CFG.earthR * Math.cos(CFG.latitude * D2R);
   const lat = new THREE.Mesh(new THREE.TorusGeometry(lr * 1.006, 0.022, 6, 96), new THREE.MeshBasicMaterial({ color: 0x9fe3ff }));
-  lat.rotation.x = Math.PI / 2; lat.position.y = CFG.earthR * Math.sin(CFG.latitude * D2R); P.tiltG.add(lat);
+  lat.rotation.x = Math.PI / 2; lat.position.y = CFG.earthR * Math.sin(CFG.latitude * D2R); P.lines.add(lat);
 
   // 日本（南中の瞬間の地面）
   P.spot = new THREE.Group(); scene.add(P.spot);
   const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.05, 32), new THREE.MeshLambertMaterial({ color: 0x86bf6c }));
   plate.position.y = 0.03; P.spot.add(plate);
   const mini = makePerson(); mini.scale.setScalar(0.3); mini.position.y = 0.05; P.spot.add(mini);
-  P.spotLab = makeLabel('日本', { furi: 'にっぽん', fs: 52, color: '#fff', stroke: '#000', h: 0.045, depthTest: false, order: 4, attn: false });
-  scene.add(P.spotLab);
   P.ray = makeArrow(0xffd23f, 0.05, 0.4); scene.add(P.ray);
   P.fan = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
   scene.add(P.fan);
@@ -724,10 +723,11 @@ function updateSpace(dt) {
   // 小さな人を南に向ける
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(g.p, g.south), g.p, g.south);
   P.spot.quaternion.setFromRotationMatrix(m);
-  P.spotLab.position.copy(spot).addScaledVector(g.p, 1.3).addScaledVector(g.south, -0.6);
   setArrow(P.ray, spot.clone().addScaledVector(g.s, 4.2), spot.clone().addScaledVector(g.s, 0.05));
   // 扇形：日本の地面で、南の方向 → 太陽の方向（「南中高度」ボタンで表示）
-  P.fan.visible = S.showNoon;
+  // 「南中高度」ボタンで：日本の地面・角度・太陽の光の線
+  P.fan.visible = P.spot.visible = P.ray.visible = S.showNoon;
+  P.lines.visible = S.showLines;
   if (P.lastFanAlt === null || Math.abs(P.lastFanAlt - g.alt) > 0.05) {
     P.fan.geometry.dispose(); P.fan.geometry = new THREE.CircleGeometry(1.25, 32, 0, g.alt * D2R); P.lastFanAlt = g.alt;
   }
@@ -820,6 +820,7 @@ function syncModeUI() {
   $('shadowBtn').setAttribute('aria-pressed', String(S.showShadow));
   $('viewBtn').innerHTML = S.eyeView ? R('{上|うえ}から{見|み}る') : R('{人|ひと}の{目|め}で{見|み}る');
   $('zoomBtn').setAttribute('aria-pressed', String(S.closeUp));
+  $('linesBtn').setAttribute('aria-pressed', String(S.showLines));
   $('zoomBtn').innerHTML = S.closeUp ? R('{全体|ぜんたい}を{見|み}る') : R('{日本|にっぽん}を{大|おお}きく');
   G.controls.enabled = g; P.controls.enabled = !g && !S.closeUp && !P.camTween;
   infoKey = ''; renderInfo();
@@ -854,6 +855,7 @@ $('spacePlay').addEventListener('click', () => { blip(); S.spacePlaying = !S.spa
 $('compareBtn').addEventListener('click', () => { blip(); S.compare = !S.compare; applyGroundHighlight(); syncModeUI(); });
 $('shadowBtn').addEventListener('click', () => { blip(); S.showShadow = !S.showShadow; syncModeUI(); });
 $('viewBtn').addEventListener('click', () => { blip(); setEyeView(!S.eyeView); syncModeUI(); });
+$('linesBtn').addEventListener('click', () => { blip(); S.showLines = !S.showLines; syncModeUI(); });
 $('zoomBtn').addEventListener('click', () => { blip(); setCloseUp(!S.closeUp); });
 slider.addEventListener('input', () => { S.playing = false; S.time = parseFloat(slider.value); timeLbl.textContent = fmtTime(S.time); $('playBtn').textContent = '▶'; });
 
@@ -906,6 +908,7 @@ window.__game = {
     setSeason, setMode, setTime, setNoon, setInfo,
     setOrbit(deg) { S.orbitAngle = ((deg % 360) + 360) % 360; S.orbitTarget = null; },
     play(on = true) { if (S.mode === 'ground') S.playing = on; else S.spacePlaying = on; syncModeUI(); },
+    setLines(on) { S.showLines = on; syncModeUI(); },
     setShadow(on) { S.showShadow = on; syncModeUI(); },
     setCompare(on) { S.compare = on; applyGroundHighlight(); syncModeUI(); },
     setEyeView(on) { setEyeView(on); syncModeUI(); },
