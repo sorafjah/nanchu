@@ -109,7 +109,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
 </script>
 </head>
 <body>
-<!-- build: 2026-10-01b -->
+<!-- build: 2026-10-01c -->
 <div id="stage"></div>
 
 <div id="top">
@@ -193,7 +193,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       </li>
     </ol>
     <button class="go" id="startBtn">はじめる</button>
-    <p class="ver">バージョン v2026-10-01b</p>
+    <p class="ver">バージョン v2026-10-01c</p>
   </div>
 </div>
 
@@ -214,7 +214,7 @@ const CFG = {
   fanR: 3.4,             // 南中高度の扇形の半径
   shadowOpacity: 0.32,   // かげの濃さ
   groundGlow: 2.0,       // 空で見る：太陽のまわりの光の大きさ
-  spaceGlow: 6.5,        // 宇宙から見る：太陽のまわりの光の大きさ
+  spaceGlow: 4.2,        // 宇宙から見る：太陽のまわりの光の大きさ
   // 宇宙から見るモード（大きさはわかりやすさ優先のチート）
   orbitR: 13, earthR: 2.4, sunR: 1.3,   // 太陽は便宜上小さくしている
   orbitSpeed: 36,        // ▶1年 のとき 1秒で進む角度（度）
@@ -609,8 +609,6 @@ function buildSpace() {
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(CFG.sunR, 48, 32), P.sunMat));
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.75; scene.add(glow);
-  const sl = makeLabel('太陽', { furi: 'たいよう', fs: 60, color: '#fff', stroke: '#000', h: 1.4 });
-  sl.position.set(0, CFG.sunR + 1.3, 0); scene.add(sl);
   scene.add(new THREE.PointLight(0xffffff, 3.2, 0, 0));
   scene.add(new THREE.AmbientLight(0xffffff, 0.12));
 
