@@ -16,6 +16,7 @@
   --ink:#1d2a3a;
   --panel:rgba(255,255,255,0.93);
   --btn:#fff;
+  --sel:#38bdf8;
   --track:#b9d3ea;
   --line:#c9d3de;
   --sun:#f2a900;
@@ -32,12 +33,14 @@
 body.space{--ink:#d9e1ee;--panel:rgba(22,30,50,0.62);--line:rgba(160,180,215,0.35);--btn:rgba(255,255,255,0.06);--navy:#3d5a8c;--sun:#b9801c;--track:#3a4a68}
 body.space .tabs,body.space #infoBtn,body.space #helpBtn,body.space .dock,body.space #info{box-shadow:none;border:1px solid rgba(160,180,215,0.18)}
 body.space .seasonBtn{border-width:2px;opacity:.85}
+body.space .seasonBtn small{display:none}
+body.space #infoBtn[aria-pressed="true"]{border:3px solid var(--sel)}
+body.space #help .card{--ink:#1d2a3a;--btn:#fff}
 body.space .seasonBtn[aria-pressed="true"]{opacity:1}
 body.space #info{width:auto;padding:8px 12px}
 body.space #info .season{font-size:15px}
 body.space #info .big .val{font-size:24px}
 body.space #info .big .lbl{font-size:12px}
-body.space #ver{color:rgba(255,255,255,.35)}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1b3a;color:var(--ink);font-family:var(--font);
   touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
 #stage{position:fixed;inset:0}
@@ -50,10 +53,10 @@ ruby rt{font-size:0.5em;font-weight:400;letter-spacing:0}
 #top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;display:flex;align-items:flex-start;gap:10px;pointer-events:none}
 #top > *{pointer-events:auto}
 .tabs{display:flex;background:var(--panel);border-radius:14px;padding:4px;gap:4px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-.tabs button{min-height:48px;min-width:44px;padding:0 16px;border:0;border-radius:10px;background:transparent;font-size:17px;line-height:1.1}
-.tabs button[aria-pressed="true"]{background:var(--navy);color:#fff}
-#infoBtn{min-height:56px;min-width:44px;padding:0 16px;border:0;border-radius:14px;background:var(--panel);font-size:17px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-#infoBtn[aria-pressed="true"]{background:var(--navy);color:#fff}
+.tabs button{min-height:48px;min-width:44px;padding:0 16px;border:3px solid transparent;border-radius:10px;background:transparent;font-size:17px;line-height:1.1}
+.tabs button[aria-pressed="true"]{border-color:var(--sel)}
+#infoBtn{min-height:56px;min-width:44px;padding:0 16px;border:3px solid transparent;border-radius:14px;background:var(--panel);font-size:17px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+#infoBtn[aria-pressed="true"]{border-color:var(--sel)}
 #helpBtn{margin-left:auto;width:52px;height:52px;border-radius:50%;border:0;background:var(--panel);font-size:26px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 
 /* 情報カード（くわしく で表示） */
@@ -76,8 +79,8 @@ ruby rt{font-size:0.5em;font-weight:400;letter-spacing:0}
 .seasonBtn small{display:block;font-size:11px;font-weight:400;margin-top:3px}
 .seasonBtn[aria-pressed="true"]{background:var(--c);color:#fff}
 .tog{min-height:52px;min-width:44px;border-radius:12px;border:2px solid var(--line);background:var(--btn);font-size:15px;padding:0 12px}
-.tog[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
-#playBtn,#spacePlay{min-width:56px;min-height:52px;border-radius:12px;border:0;background:var(--sun);color:var(--ink);font-size:20px;padding:0 14px}
+.tog[aria-pressed="true"]{border:3px solid var(--sel)}
+#playBtn{min-width:56px;min-height:52px;border-radius:12px;border:0;background:var(--sun);color:var(--ink);font-size:20px;padding:0 14px}
 .timeBox{display:flex;align-items:center;gap:8px;flex:1 1 260px;min-width:0}
 #timeLbl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;min-width:66px;text-align:right}
 input[type=range]{flex:1;min-width:0;height:52px;-webkit-appearance:none;appearance:none;background:transparent;touch-action:none}
@@ -87,18 +90,18 @@ input[type=range]::-moz-range-track{height:12px;border-radius:6px;background:var
 input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;background:#f08a24;border:0}
 .spacer{flex:1}
 
-#ver{position:fixed;right:8px;top:calc(66px + env(safe-area-inset-top,0px));font-size:10px;color:rgba(255,255,255,.75);pointer-events:none;text-shadow:0 0 3px rgba(0,0,0,.5)}
 
 /* 説明画面 */
 #help{position:fixed;inset:0;background:rgba(8,18,40,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
-#help .card{background:#fff;border-radius:22px;max-width:760px;width:100%;max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 24px;line-height:1.7}
+#help .card{color:#1d2a3a;background:#fff;border-radius:22px;max-width:760px;width:100%;max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 24px;line-height:1.7}
 #help h1{font-size:26px;margin:0 0 6px;text-wrap:balance;line-height:1.6}
 #help .lead{font-size:18px;margin:0 0 14px}
 #help .lead b{color:var(--navy)}
 #help ol{list-style:none;padding:0;margin:0;display:grid;gap:12px}
 #help li{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;background:#f3f6fa;border-radius:14px;padding:10px 12px;font-size:17px}
 #help li svg{width:96px;height:64px}
-#help .go{display:block;margin:18px auto 0;min-width:220px;min-height:64px;border:0;border-radius:32px;background:var(--sun);font-size:24px}
+#help .go{display:block;margin:18px auto 0;min-width:220px;min-height:64px;border:0;border-radius:32px;background:#f2a900;color:#1d2a3a;font-size:24px}
+#help .ver{margin:14px 0 0;text-align:right;font-size:12px;color:#7a8799}
 @media (max-width:560px){#help li{grid-template-columns:72px 1fr}#help li svg{width:72px;height:48px}#help h1{font-size:21px}}
 </style>
 <script type="importmap">
@@ -111,7 +114,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
 </script>
 </head>
 <body>
-<!-- build: 2026-09-30c -->
+<!-- build: 2026-09-30d -->
 <div id="stage"></div>
 
 <div id="top">
@@ -141,13 +144,12 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
         <span id="timeLbl">12:00</span>
       </div>
       <span class="spacer spaceOnly" hidden></span>
-      <button id="spacePlay" class="spaceOnly" hidden data-ruby>▶ 1{年|ねん}</button>
+      <button id="spacePlay" class="tog spaceOnly" aria-pressed="false" hidden data-ruby>▶ 1{年|ねん}</button>
       <button class="tog spaceOnly" id="zoomBtn" aria-pressed="false" hidden data-ruby>{日本|にっぽん}を{大|おお}きく</button>
     </div>
   </div>
 </div>
 
-<div id="ver">v2026-09-30c</div>
 
 <div id="help">
   <div class="card scroll">
@@ -173,7 +175,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
           <circle cx="56" cy="32" r="14" fill="#ffe36b" stroke="#f2a900" stroke-width="4"/>
           <path d="M34 32h-12M26 26l-6 6 6 6M78 32h-12M74 26l6 6-6 6" stroke="#1d2a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
         </svg>
-        <span data-ruby>▶ を おすか、つまみを {動|うご}かすと、{太陽|たいよう}と {人|ひと}の かげが {動|うご}きます。</span>
+        <span data-ruby>▶ を おすか、つまみを {動|うご}かすと、{太陽|たいよう}が {動|うご}きます。</span>
       </li>
       <li>
         <svg viewBox="0 0 96 64" aria-hidden="true">
@@ -194,6 +196,7 @@ input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;bac
       </li>
     </ol>
     <button class="go" id="startBtn">はじめる</button>
+    <p class="ver">バージョン v2026-09-30d</p>
   </div>
 </div>
 
@@ -212,9 +215,8 @@ const CFG = {
   timeMin: 4, timeMax: 20,
   playSpeed: 1.4,        // ▶ のとき 1秒で進む時間（時間）
   fanR: 3.4,             // 南中高度の扇形の半径
-  shadowOpacity: 0.32,   // かげの濃さ
   groundGlow: 2.0,       // 空で見る：太陽のまわりの光の大きさ
-  spaceGlow: 6.5,        // 宇宙から見る：太陽のまわりの光の大きさ
+  spaceGlow: 8.5,        // 宇宙から見る：太陽のまわりの光の大きさ
   // 宇宙から見るモード（大きさはわかりやすさ優先のチート）
   orbitR: 13, earthR: 2.4, sunR: 2.4,
   orbitSpeed: 36,        // ▶1年 のとき 1秒で進む角度（度）
@@ -482,13 +484,8 @@ function buildGround() {
     G.paths[key] = { tube, mat, lab };
   }
 
-  // 人と かげ
+  // 人
   G.person = makePerson(); scene.add(G.person);
-  const sg = new THREE.PlaneGeometry(1, 0.5); sg.rotateX(-Math.PI / 2); sg.translate(0.5, 0.03, 0);
-  G.shadow = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: CFG.shadowOpacity, depthWrite: false }));
-  scene.add(G.shadow);
-  G.shadowHead = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), new THREE.MeshBasicMaterial({ color: 0x0f1a0e, transparent: true, opacity: CFG.shadowOpacity, depthWrite: false }));
-  G.shadowHead.rotation.x = -Math.PI / 2; scene.add(G.shadowHead);
 
   // 太陽
   G.sun = new THREE.Group();
@@ -545,17 +542,7 @@ function updateGround(dt) {
   G.dir.position.copy(v).multiplyScalar(20);
   G.dir.intensity = alt > 0 ? 0.4 + 1.2 * Math.min(1, alt / 20) : 0;
   G.hemi.intensity = alt > 0 ? 1.2 : 0.55 + 0.65 * Math.max(0, (alt + 8) / 8);
-  // かげ（見た目だけの計算で作る）
-  const up = alt > 0.3;
-  G.shadow.visible = G.shadowHead.visible = up;
-  if (up) {
-    const L = Math.min(CFG.groundR - 0.3, CFG.personH / Math.tan(alt * D2R));
-    const dx = -v.x, dz = -v.z, hl = Math.hypot(dx, dz) || 1;
-    const bodyL = Math.max(0.01, L * 0.86);
-    G.shadow.scale.x = bodyL; G.shadow.rotation.y = Math.atan2(-dz / hl, dx / hl);
-    G.shadowHead.position.set(dx / hl * L * 0.93, 0.035, dz / hl * L * 0.93);
-  }
-  S.cur = { alt, shadow: up ? 1 / Math.tan(alt * D2R) : null };
+  S.cur = { alt };
 }
 
 function applyGroundHighlight() {
@@ -605,7 +592,7 @@ function buildSpace() {
   P.sunMat = new THREE.MeshBasicMaterial({ color: 0xffd23f });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(CFG.sunR, 48, 32), P.sunMat));
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.55; scene.add(glow);
+  glow.scale.set(CFG.spaceGlow, CFG.spaceGlow, 1); glow.material.opacity = 0.5; scene.add(glow);
   const sl = makeLabel('太陽', { furi: 'たいよう', fs: 60, color: '#fff', stroke: '#000', h: 1.4 });
   sl.position.set(0, CFG.sunR + 1.6, 0); scene.add(sl);
   scene.add(new THREE.PointLight(0xffffff, 3.2, 0, 0));
@@ -642,8 +629,6 @@ function buildSpace() {
   // 地軸（黄）
   const axis = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, CFG.earthR * 3.4, 10), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
   P.tiltG.add(axis);
-  const nLab = makeLabel('北', { furi: 'きた', fs: 56, color: '#fff', stroke: '#000', h: 0.9 });
-  nLab.position.set(0, CFG.earthR * 1.7 + 0.6, 0); P.tiltG.add(nLab);
   const axLab = makeLabel('地軸', { furi: 'ちじく', fs: 52, color: '#ffe27a', stroke: '#000', h: 0.8 });
   axLab.position.set(0.9, -CFG.earthR * 1.7, 0); P.tiltG.add(axLab);
   // 赤道（赤）と 日本の緯度の線
@@ -806,6 +791,7 @@ function syncModeUI() {
   document.querySelectorAll('.spaceOnly').forEach(el => el.hidden = g);
   $('playBtn').textContent = S.playing ? '❚❚' : '▶';
   $('spacePlay').innerHTML = S.spacePlaying ? '❚❚ とめる' : R('▶ 1{年|ねん}');
+  $('spacePlay').setAttribute('aria-pressed', String(S.spacePlaying));
   $('compareBtn').setAttribute('aria-pressed', String(S.compare));
   $('noonBtn').setAttribute('aria-pressed', String(S.showNoon));
   $('infoBtn').setAttribute('aria-pressed', String(S.showInfo));
